@@ -1,0 +1,8 @@
+**/__pycache__/*
+venv
+.test_results
+.vscode/*
+.DS_Store
+.python-version
+.idea/*
+/function_profiler/.ipynb_checkpoints/

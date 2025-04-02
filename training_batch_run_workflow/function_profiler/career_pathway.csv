@@ -1,0 +1,12 @@
+fromstage,tostage,weight
+stage1,stage2,1
+stage2,stage4,0.5
+stage2,stage7,0.3
+stage2,stage10,0.2
+stage7,stage8,1
+stage10,stage11,1
+stage11,stage12,1
+stage4,stage3,1
+stage3,stage9,0.1
+stage3,stage5,0.95
+stage5,stage6,1

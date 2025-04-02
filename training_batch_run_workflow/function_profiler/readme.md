@@ -1,0 +1,1 @@
+To see a visualisation of the profiler use the following command `snakeviz function_profiler/profile_drake_functions_1709923647.prof --server` - replacing the .prof file if needed. If you have not installed snakeviz please run a `pip install` to do so. See the latest details about snakeviz here: https://pypi.org/project/snakeviz/
