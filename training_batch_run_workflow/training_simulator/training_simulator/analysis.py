@@ -4,7 +4,7 @@ import pandas as pd
 import pyarrow as pa
 import sys
 
-from structure import Results
+from .structure import Results
 
 
 def get_agents_data(simulation_data: List[Results]) -> pd.DataFrame:

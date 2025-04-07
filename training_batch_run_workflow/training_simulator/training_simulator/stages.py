@@ -6,7 +6,7 @@ import uuid
 from numba import jit
 import sys
 
-from structure import PilotBase, Stage, StageManager, State
+from training_batch_run_workflow.training_simulator.training_simulator.structure import PilotBase, Stage, StageManager, State
 
 
 @dataclass

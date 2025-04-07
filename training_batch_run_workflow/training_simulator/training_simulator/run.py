@@ -9,9 +9,9 @@ import pandas as pd
 import pyarrow as pa
 import mesa
 import boto3
-from model import PipelineModel
-from structure import Results, Stage
-from analysis import (
+from .model import PipelineModel
+from .structure import Results, Stage
+from .analysis import (
     make_average_path,
     get_agents_data,
     make_average_times_path,

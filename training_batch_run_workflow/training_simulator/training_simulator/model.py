@@ -11,8 +11,8 @@ import networkx as nx
 from numba import jit
 
 from default import DEFAULT_CONFIG
-from stages import MIOT, PipelineStage
-from structure import PilotBase, PipelineModelBase, Stage, StageManager, State, Stream
+from .stages import MIOT, PipelineStage
+from .structure import PilotBase, PipelineModelBase, Stage, StageManager, State, Stream
 
 
 class Pilot(PilotBase):
