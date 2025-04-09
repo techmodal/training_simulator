@@ -10,31 +10,20 @@ import mesa
 class State(enum.Enum):
     PROGRESSING = "progressing"
     HOLD = "hold"
-    LEFT_RAF = "left"
+    LEFT_PIPELINE = "left"
     LEFT_STREAM = "left_stream"
     TRAINING_COMPLETE = "complete"
 
 
 class Stream(enum.Enum):
-    PILOT = "pilot"
+    TRAINEE = "trainee"
     OTHER = "other"
 
 
-# no longer used for stages other than MIOT
+# no longer used for stages other than INIT
 class Stage(enum.Enum):
-    MIOT = "miot"
-    MAGS = "mags"
-    EFT = "eft"
-    FJLin = "fjlin"
-    BFT = "bft"
-    AJT1 = "ajt1"
-    AJT2 = "ajt2"
-    MELin = "melin"
-    MEPT = "mept"
-    MEXO = "mexo"
-    BRT = "brt"
-    ART = "art"
-    ARTMAR = "artmar"
+    INIT = "init"
+    STAGE1 = "stage1"
 
 
 @dataclass
@@ -42,14 +31,14 @@ class PipelineModelBase(mesa.Model):
     stage_map: dict
     stage_variance_map: dict
     input_params: dict
-    init_pilots: dict
+    init_trainees: dict
     schedules: dict
     start_month: int
     step_count: int
 
 
 @dataclass
-class PilotBase(mesa.Agent):
+class TraineeBase(mesa.Agent):
     unique_id: int
     model: PipelineModelBase
     stage: str
@@ -62,7 +51,7 @@ class PilotBase(mesa.Agent):
 
 class StageManager(ABC):
     @abstractmethod
-    def drop_out(self, pilot: PilotBase) -> bool:
+    def drop_out(self, trainee: TraineeBase) -> bool:
         ...
 
     @abstractmethod
@@ -74,7 +63,7 @@ class StageManager(ABC):
         ...
 
     @abstractmethod
-    def time_to_progress(self, pilot: PilotBase) -> bool:
+    def time_to_progress(self, trainee: TraineeBase) -> bool:
         ...
 
     @abstractmethod

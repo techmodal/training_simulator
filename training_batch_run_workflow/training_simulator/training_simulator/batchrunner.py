@@ -22,7 +22,7 @@ import itertools
 
 
 PARAM_OVERRIDES = {
-    "miot_new_pilots": [11],
+    "init_new_trainees": [11],
     "stage1_drop_out_progressing": [0.1],
     "stage1_capacity_progressing": [2],
     "stage1_time_progressing": [9],
@@ -120,15 +120,15 @@ def parameter_sweep(
 
         a_df = get_agents_data(sim_results)
         # a_df.to_csv('agent_data.csv')
-        # drop dulplicated for left_raf
-        left_df = a_df.loc[a_df["State"] == "left_raf"]
+        # drop dulplicated for left
+        left_df = a_df.loc[a_df["State"] == "left"]
         left_df = left_df.drop_duplicates(subset=["RunId", "AgentID", "Stage", "State"])
         left = make_average_path(left_df,model_params=parameters)
         a_df["time_stage_state"] = (
             a_df.groupby(["RunId", "AgentID", "Stage", "State"]).cumcount() + 1
         )
        # average_progressing = make_average_times_path(a_df)
-        n_df = make_average_path(a_df.loc[a_df["State"] != "left_raf"], model_params=parameters)
+        n_df = make_average_path(a_df.loc[a_df["State"] != "left"], model_params=parameters)
         # pivot table flatten
         left = flatten_pivot(left, "count")
         n_df = flatten_pivot(n_df, "count")
@@ -141,9 +141,9 @@ def parameter_sweep(
         # )
 
         for stage in Stage:
-            if stage.value != Stage.MIOT.value:
+            if stage.value != Stage.INIT.value:
                 left_agents = a_df.loc[
-                    (a_df["State"] == "left_raf") & (a_df["Stage"] == stage.value)
+                    (a_df["State"] == "left") & (a_df["Stage"] == stage.value)
                 ]["AgentID"].tolist()
                 progressing_df = a_df[a_df["AgentID"].isin(left_agents) == False]
                 stage_df = progressing_df.loc[

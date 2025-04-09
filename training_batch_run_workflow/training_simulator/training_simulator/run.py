@@ -17,7 +17,7 @@ from .analysis import (
     make_average_times_path,
 )
 import networkx as nx
-from default import DEFAULT_PARAMETERS, DEFAULT_CONFIG    
+from .default import DEFAULT_PARAMETERS
 
 import argparse
 
@@ -34,9 +34,9 @@ def check_restream(model_params, career_pathway_file):
         df: pandas df of streaming weighst with values overriden if applicable
     """
     df = pd.read_csv(career_pathway_file)
-    df.iloc[1,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage4']
-    df.iloc[2,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage7']
-    df.iloc[3,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage10']
+    #df.iloc[1,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage4']
+    #df.iloc[2,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage7']
+    #df.iloc[3,2] = DEFAULT_CONFIG['streaming_ratio_map'][model_params["streaming"]]['stage10']
 
     return df
 
@@ -119,9 +119,9 @@ def process_row(row, df_network, career_pathway_file):
         flat_df, average_progressing, on="Step", how="outer"
     ).fillna(0)
 
-    # adding exit count for each stage except MIOT as it is not part of MFTS
+    # adding exit count for each stage except INIT
     for stage in Stage:
-        if (stage.value != Stage.MIOT.value):
+        if (stage.value != Stage.INIT.value):
             left_agents = a_df.loc[(a_df['State'] == 'left_raf') & (a_df['Stage'] == stage.value)][
                 'AgentID'].tolist()
             progressing_df = a_df[a_df['AgentID'].isin(left_agents) == False]

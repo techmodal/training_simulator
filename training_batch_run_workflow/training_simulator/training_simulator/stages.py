@@ -6,23 +6,21 @@ import uuid
 from numba import jit
 import sys
 
-from training_batch_run_workflow.training_simulator.training_simulator.structure import PilotBase, Stage, StageManager, State
-
-
+from .structure import TraineeBase, Stage, StageManager, State
 @dataclass
-class MIOT(StageManager):
-    new_pilots: int
+class INIT(StageManager):
+    new_trainees: int
     input_rate: int
     time_hold: int
-    stage_id = "miot"
+    stage_id = "init"
 
-    def drop_out(self, pilot: PilotBase) -> bool:
-        return pilot.time_in_stage_state > self.time_hold
+    def drop_out(self, trainee: TraineeBase) -> bool:
+        return trainee.time_in_stage_state > self.time_hold
 
     def get_next_stage(self) -> Stage:
-        return Stage.MAGS
+        return Stage.Stage1
 
-    def time_to_progress(self, pilot: PilotBase) -> bool:
+    def time_to_progress(self, trainee: TraineeBase) -> bool:
         return True
 
     def leave_hold(self, unique_id: int) -> bool:
@@ -30,8 +28,6 @@ class MIOT(StageManager):
 
     def activate_stage(self, duration: int, capacity: int):
         return
-
-
 @dataclass
 class PipelineStage(StageManager):
     stage_id: str
@@ -42,7 +38,7 @@ class PipelineStage(StageManager):
     time_progressing: int
     time_hold: int
     adjacent_stages: Dict[str, Dict]
-    hold_progressing_pilots: list[int]
+    hold_progressing_trainees: list[int]
 
     capacity_dropping: float = 0
     yearly_attrition: int = 0
@@ -53,12 +49,12 @@ class PipelineStage(StageManager):
     exit_cohort_capacity: int = 0
     restream_trainees = {}
 
-    def drop_out(self, pilot: PilotBase) -> bool:
+    def drop_out(self, trainee: TraineeBase) -> bool:
         coin_flip = random.uniform(0, 1)
-        if pilot.state == State.PROGRESSING:
+        if trainee.state == State.PROGRESSING:
             return self.drop_out_progressing > coin_flip
         return (
-            self.drop_out_hold > coin_flip or pilot.time_in_stage_state > self.time_hold
+            self.drop_out_hold > coin_flip or trainee.time_in_stage_state > self.time_hold
         )
 
     def get_next_stage(self) -> str:
@@ -105,15 +101,15 @@ class PipelineStage(StageManager):
         return False
 
 
-    def time_to_progress(self, pilot: PilotBase) -> bool:
-        if pilot.state == State.PROGRESSING:
-            return pilot.time_in_stage_state >= self.time_progressing
-        elif pilot.state == State.HOLD:
+    def time_to_progress(self, trainee: TraineeBase) -> bool:
+        if trainee.state == State.PROGRESSING:
+            return trainee.time_in_stage_state >= self.time_progressing
+        elif trainee.state == State.HOLD:
             return True
         return False
 
     def leave_hold(self, unique_id: int) -> bool:
-        if unique_id in self.hold_progressing_pilots:
+        if unique_id in self.hold_progressing_trainees:
             return True
         return False
 

@@ -10,12 +10,11 @@ import math
 import networkx as nx
 from numba import jit
 
-from default import DEFAULT_CONFIG
-from .stages import MIOT, PipelineStage
-from .structure import PilotBase, PipelineModelBase, Stage, StageManager, State, Stream
+from .stages import INIT, PipelineStage
+from .structure import TraineeBase, PipelineModelBase, Stage, StageManager, State, Stream
 
 
-class Pilot(PilotBase):
+class Trainee(TraineeBase):
     """
     Agents can be initialized into all the stages and states to reflect a realistic system state, where pipeline is not
     empty. If stage and state and not specified then it is assumed they are starting from the first stage of the pipeline.
@@ -24,11 +23,11 @@ class Pilot(PilotBase):
     def __init__(
         self,
         model: PipelineModelBase,
-        stage: str = Stage.MIOT.value,
-        stage_id: str = "miot",
+        stage: str = Stage.INIT.value,
+        stage_id: str = "init",
         state: State = State.PROGRESSING,
         time_in_stage_state: int = 0,
-        stream=Stream.PILOT,
+        stream=Stream.TRAINEE,
     ) -> None:
         self.unique_id = uuid.uuid4().int
         self.model = model
@@ -42,7 +41,7 @@ class Pilot(PilotBase):
     def _compute_stage_state(self, month_step: int) -> Tuple[str, State]:
         if self.stage not in self.model.stage_map.keys():
             return self.stage, State.TRAINING_COMPLETE
-        elif self.state == State.LEFT_RAF: 
+        elif self.state == State.LEFT_PIPELINE:
             return self.stage, self.state
 
         current_stage = self.model.stage_map[self.stage]
@@ -51,7 +50,7 @@ class Pilot(PilotBase):
         if current_stage.drop_out(self):
             if current_stage.capacity_dropping > current_stage.yearly_attrition:
                 current_stage.yearly_attrition += 1
-                return self.stage, State.LEFT_RAF
+                return self.stage, State.LEFT_PIPELINE
 
         # agent not completed my current stage?
         if not current_stage.time_to_progress(self):
@@ -75,7 +74,7 @@ class Pilot(PilotBase):
         #########
         
         # Check if this is the start stage then assign next stage from career path
-        if type(current_stage).__name__ == "MIOT":
+        if type(current_stage).__name__ == "INIT":
             start_node = [n for n, d in self.model.cp.in_degree() if d == 0]
             next_stage = start_node[0]
         else:
@@ -133,14 +132,14 @@ class PipelineModel(PipelineModelBase):
                 "State": lambda a: a.state.value,
                 "Month_Step": lambda a: a.month_step,
             },
-            model_reporters={"stagemap": lambda m: m.pilot_nums()},
+            model_reporters={"stagemap": lambda m: m.trainee_nums()},
         )
         self._initialise_stage_attrition_caps(params=iteration_params)
         self._build_warm_start_df(params=iteration_params)
-        self._initialise_pilots(params=iteration_params)
+        self._initialise_trainees(params=iteration_params)
 
-    def pilot_nums(self):
-        return self.stage_map[Stage.MIOT.value].new_pilots
+    def trainee_nums(self):
+        return self.stage_map[Stage.INIT.value].new_trainees
 
     
     def _max_throughput_func(self, stage: str, stream_ratio: int = 1) -> float:
@@ -169,10 +168,7 @@ class PipelineModel(PipelineModelBase):
         prev_stage_throughtput = []
         prev_stage_throughtput.append(self._max_throughput_func(stage))
         for course_pair in list(nx.edge_dfs(self.cp,stage, orientation='reverse')):
-            if course_pair[0] == 'eft':
-                    prev_stage_throughtput.append(self._max_throughput_func(course_pair[0]) * DEFAULT_CONFIG['streaming_ratio_map'][params['streaming']][course_pair[1]])
-            else:
-                prev_stage_throughtput.append(self._max_throughput_func(course_pair[0]))
+            prev_stage_throughtput.append(self._max_throughput_func(course_pair[0]))
         return min(prev_stage_throughtput)
 
 
@@ -183,7 +179,7 @@ class PipelineModel(PipelineModelBase):
             params (dict): iteration param set
         """
         for stage in self.cp.nodes:
-            if stage != Stage.MIOT.value:
+            if stage != Stage.INIT.value:
                 self.stage_map[stage].capacity_dropping = ceilmult(self._find_minimum_course_throughput(params = params, stage = stage), (self.stage_map[stage].drop_out_progressing if stage != 'stage4' else 0))
   
 
@@ -233,26 +229,26 @@ class PipelineModel(PipelineModelBase):
             self.final_df = final_df
             
         
-    def _initialise_pilots(self, params: dict, hold: bool = True, warm_start_month: int = 4) -> None:
-        """initialise pilots at start of model run to be a warm start, by inserting x pilots onto each stage and y pilots onto each stage's pre-stage hold if bool is true. 
+    def _initialise_trainees(self, params: dict, hold: bool = True, warm_start_month: int = 4) -> None:
+        """initialise trainees at start of model run to be a warm start, by inserting x trainees onto each stage and y trainees onto each stage's pre-stage hold if bool is true.
         Documentation - https://defencedigital.atlassian.net/wiki/spaces/DRK/pages/573734938/Warm+Start
 
         Args:
             params (dict): iteration param set
-            hold (bool, optional): should a fraction of warm start pilots also be set to that stage's pre-stage hold. Defaults to True.
+            hold (bool, optional): should a fraction of warm start trainees also be set to that stage's pre-stage hold. Defaults to True.
             warm_start_month (int, optional): initialisation month, PO wants Drake to start from April. Defaults to 4.
         """
         
-        def split_pilots(stage: str, pilots: int, month: int) -> list:
-            """split annual throuput of pilots across x courses based on the number of cohorts in flight in warm start month
+        def split_trainees(stage: str, trainees: int, month: int) -> list:
+            """split annual throuput of trainees across x courses based on the number of cohorts in flight in warm start month
 
             Args:
                 stage (str): stage name
-                pilots (int): number of pilots to split
+                trainees (int): number of trainees to split
                 month (int): initilisation month
 
             Returns:
-                list: tuples of init pilots to add to a stage with a time prgressing values base don cohort duration from warm start df 
+                list: tuples of init trainees to add to a stage with a time prgressing values base don cohort duration from warm start df
             """
             if stage == 'art':
                 df = self.final_df.loc[:,self.final_df.columns.str.startswith(stage) & ~self.final_df.columns.str.contains('artmar')]
@@ -261,39 +257,39 @@ class PipelineModel(PipelineModelBase):
             df = df.loc[month].to_frame().T.dropna(axis='columns', how='all')
             splits = df[f'{stage}_cum'].item()
             
-            pilot_starts = []
+            trainee_starts = []
 
             for i in range(-1,-1 * int(splits) - 1,-1):
-                pilot_starts.append((round(pilots/splits,0), params['pipeline'][stage]['time_progressing'] - df.iloc[:,i].item()))
-            return pilot_starts
+                trainee_starts.append((round(trainees/splits,0), params['pipeline'][stage]['time_progressing'] - df.iloc[:,i].item()))
+            return trainee_starts
         
-        def total_init_pilots(stage: str, month: int) -> float:
-            """compute how many pilots to split in split_pilots()
+        def total_init_trainees(stage: str, month: int) -> float:
+            """compute how many trainees to split in split_trainees()
 
             Args:
                 stage (str): stage name
                 month (int): warm start month
 
             Returns:
-                float: pilot count to split
+                float: trainee count to split
             """
             return round(self.final_df.loc[month, stage +'_cum'] * avg_course_attendance[stage],2)
         
         avg_course_attendance = {}
         warm_start = {}
-        for stage in self.cp.nodes:  
-            if stage != Stage.MIOT.value:
+        for stage in self.cp.nodes:
+            if stage != Stage.INIT.value:
                 avg_course_attendance[stage] = round(self._find_minimum_course_throughput(params = params, stage = stage)/len(self.schedules[stage]), 2)
-                warm_start[stage] = split_pilots(stage, total_init_pilots(stage, warm_start_month), warm_start_month)           
+                warm_start[stage] = split_trainees(stage, total_init_trainees(stage, warm_start_month), warm_start_month)
         
         
         for stage in self.cp.nodes:
-            if stage != Stage.MIOT.value:
+            if stage != Stage.INIT.value:
                 stage_id = self.stage_map[stage].stage_id 
                 for start in warm_start[stage]:
                     for _ in range(int(start[0])):
                         self.schedule.add(
-                            Pilot(
+                            Trainee(
                                 self,
                                 stage=stage,
                                 stage_id=stage_id,
@@ -301,10 +297,10 @@ class PipelineModel(PipelineModelBase):
                                 time_in_stage_state=start[1],
                             )
                         )
-                        # hold code uses %2 to result in ~1/2 as many warm start pilots for a stage being init'ed to a stage's pre-stage hold, modulo number can be changed to increase/decrease voulme of hold pilots
+                        # hold code uses %2 to result in ~1/2 as many warm start trainees for a stage being init'ed to a stage's pre-stage hold, modulo number can be changed to increase/decrease voulme of hold trainees
                         if hold and _%2 == 0:
                             self.schedule.add(
-                                Pilot(
+                                Trainee(
                                     self,
                                     stage=stage,
                                     stage_id=stage_id,
@@ -313,14 +309,14 @@ class PipelineModel(PipelineModelBase):
                                 )     
                             )
 
-    def _add_pilots(
+    def _add_trainees(
         self,
     ) -> None:
-        new_pilots = self.stage_map[Stage.MIOT.value].new_pilots
+        new_trainees = self.stage_map[Stage.INIT.value].new_trainees
 
-        for _ in range(new_pilots):
-            pilot = Pilot(self)
-            self.schedule.add(pilot)
+        for _ in range(new_trainees):
+            trainee = Trainee(self)
+            self.schedule.add(trainee)
 
     def step(self) -> None:
         for stage in self.cp.nodes:
@@ -333,17 +329,17 @@ class PipelineModel(PipelineModelBase):
             if month == 4:
                 self.stage_map[stage].yearly_attrition = 0
                 
-            if stage != Stage.MIOT.value:
+            if stage != Stage.INIT.value:
                 
                 if month in self.schedules[stage]:
                     self.stage_map[stage].reset_stage(self.step_count)
                 
-                for pilot in self.schedule.agents:
+                for trainee in self.schedule.agents:
                     if (
-                        (stage == pilot.stage)
-                        and ("progressing" == pilot.state.value)
+                        (stage == trainee.stage)
+                        and ("progressing" == trainee.state.value)
                         and (
-                            pilot.time_in_stage_state
+                            trainee.time_in_stage_state
                             >= self.stage_map[stage].time_progressing
                         )
                     ):
@@ -351,26 +347,26 @@ class PipelineModel(PipelineModelBase):
                 
                 #Pseudo-FIFO code             
                 if month in self.schedules[stage]:
-                    self.stage_map[stage].hold_progressing_pilots = []
+                    self.stage_map[stage].hold_progressing_trainees = []
                     
-                    pilots_to_progress = self.stage_map[stage].capacity_progressing
-                    hold_pilots_weighting = []
-                    hold_pilots_id = []
+                    trainees_to_progress = self.stage_map[stage].capacity_progressing
+                    hold_trainees_weighting = []
+                    hold_trainees_id = []
                     
-                    for pilot in self.schedule.agents:
-                        if (stage == pilot.stage) and ('hold' == pilot.state.value):
-                            hold_pilots_weighting.append(pilot.time_in_stage_state)
-                            hold_pilots_id.append(pilot.unique_id)
+                    for trainee in self.schedule.agents:
+                        if (stage == trainee.stage) and ('hold' == trainee.state.value):
+                            hold_trainees_weighting.append(trainee.time_in_stage_state)
+                            hold_trainees_id.append(trainee.unique_id)
                             
-                    for _ in range(min(pilots_to_progress, len(hold_pilots_id))):
-                        choice = random.choices(hold_pilots_id, hold_pilots_weighting, k=1)[0]
-                        self.stage_map[stage].hold_progressing_pilots.append(choice)
-                        idx = hold_pilots_id.index(choice)
-                        del hold_pilots_id[idx]
-                        del hold_pilots_weighting[idx] 
+                    for _ in range(min(trainees_to_progress, len(hold_trainees_id))):
+                        choice = random.choices(hold_trainees_id, hold_trainees_weighting, k=1)[0]
+                        self.stage_map[stage].hold_progressing_trainees.append(choice)
+                        idx = hold_trainees_id.index(choice)
+                        del hold_trainees_id[idx]
+                        del hold_trainees_weighting[idx]
                             
-        if self.schedule.steps % self.stage_map[Stage.MIOT.value].input_rate == 0:
-            self._add_pilots()
+        if self.schedule.steps % self.stage_map[Stage.INIT.value].input_rate == 0:
+            self._add_trainees()
 
         self.datacollector.collect(self)
         self.step_count += 1
@@ -379,15 +375,15 @@ class PipelineModel(PipelineModelBase):
 
 def build_stage_map(parameters: dict, cp: nx.DiGraph) -> Dict[str, StageManager]:
     stagemap = {}
-    stagemap[Stage.MIOT.value] = MIOT(**(parameters["pipeline"][Stage.MIOT.value]))
-      
+    stagemap[Stage.INIT.value] = INIT(**(parameters["pipeline"][Stage.INIT.value]))
+
     for node in cp.nodes:
         # generate 5 digit int id
         unique_id = f"0_{str(uuid.uuid4().int)[:5]}"
         neighbors = cp.adj[node]
         stage = PipelineStage(
             **(parameters["pipeline"][node]),
-            hold_progressing_pilots=[],
+            hold_progressing_trainees=[],
             stage_id=unique_id,
             stage_name=node,
             adjacent_stages=neighbors,
@@ -404,10 +400,10 @@ def build_schedule(parameters: dict) -> Dict[str, List]:
 def compute_cohort_stratification(
     pipeline_parameters: dict, stage_map: Dict[str, StageManager], cp: nx.DiGraph
 ):
-    # MIOT has a different label
-    recruiting_duration = pipeline_parameters[Stage.MIOT.value]["input_rate"]
+    # INIT has a different label
+    recruiting_duration = pipeline_parameters[Stage.INIT.value]["input_rate"]
     cohort_steps = {
-        Stage.MIOT.value: [1],
+        Stage.INIT.value: [1],
     }
     for current_stage in cp.nodes:
         if current_stage in cohort_steps:

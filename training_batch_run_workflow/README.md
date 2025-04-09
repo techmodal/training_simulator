@@ -1,13 +1,16 @@
-# Project Pipeline Simulator
+# Workforce Pipeline Simulator
 
 ## Problem Statement
+- Workforce pipelines are under pressure. Whether training pilots, engineers, or healthcare staff—getting skilled individuals to the frontline on time is tough.
+- Delays lead to capability gaps. Gaps lead to downtime. Everyone feels the strain.
+- Most organisations rely on static spreadsheets, disconnected data, and guesswork.
 There is a requirement to model flow of actors through a pipeline of tasks/stages and understand how different capacity and timelines of different stages impact the overall pipeline duration.
 
 ## The Model
 To address the problem a high-level model of the pipeline is implemented to evaluate the effects of different interventions through time. The model is implemented as a stochastic process connecting different stages with states and is taking into account transition probabilities derived from existing datasets.
 - Diagram of the Pipeline
-Diagram below represents the stages and the flow of the agents through the pipeline.
-![diagram](./notebooks/pipeline.png)
+Diagram below represents the stages and the flow of the agents (trainees) through the pipeline.
+![diagram](./training_simulator/notebooks/career_pipelineHLD.png)
 To provide required granularity for the pipeline time step of one month is considered.
 
 ## Modelling Strategy
@@ -57,7 +60,6 @@ The flow between state/stages  can be seen on a diagram above.
 - Outputs are stochastic so this can be challenging to validate.
 
 ## Code Structure
-- Mesa
-Mesa framework was used to implement aircrew training ABM. Mesa is an Apache2 licensed framework in Python. It allows developers to quickly create models using built-in core components and analyze their results using Python's data analysis tools. 
+- Mesa framework was used to implement aircrew training ABM. Mesa is an Apache2 licensed framework in Python. It allows developers to quickly create models using built-in core components and analyze their results using Python's data analysis tools. 
 - Stage Managers
 
