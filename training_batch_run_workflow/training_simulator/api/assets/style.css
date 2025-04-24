@@ -1,0 +1,27 @@
+
+.rc-slider-rail {
+    background-color: #999 !important;
+}
+
+.rc-slider-track {
+    background-color: #999 !important;
+}
+
+.rc-slider-handle {
+    background-color: #0064C4 !important;
+    border: 2px solid white !important;
+    box-shadow: none !important;
+}
+
+.rc-slider-dot {
+    background-color: #999 !important;
+    border-color: #999 !important;
+}
+.rc-slider-track {
+background-color: #0064C4 !important;
+}
+
+.rc-slider-dot-active {
+    background-color: #0064C4 !important;
+    border-color: #0064C4 !important;
+}
