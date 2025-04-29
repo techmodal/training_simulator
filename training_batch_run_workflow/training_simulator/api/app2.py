@@ -1,11 +1,11 @@
 import dash
-from dash import dcc, html, Input, Output, State, ALL
+import dash_bootstrap_components as dbc
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import requests
-import pandas as pd
-import numpy as np
-import dash_bootstrap_components as dbc
-import json
+from dash import dcc, html, Input, Output, State, ALL
+
 import default  # Import the default.py file containing DEFAULT_PARAMETERS
 
 # Extract course data from default.py instead of API request
@@ -19,13 +19,18 @@ dropdown_options = [
 
 API_URL = "http://127.0.0.1:8055"
 
-app = dash.Dash(__name__, requests_pathname_prefix='/dashboard/')
+app = dash.Dash(
+    __name__,
+    requests_pathname_prefix='/dashboard/',
+    external_stylesheets=[dbc.themes.BOOTSTRAP,
+                          "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"]
+)
 app.title = "Course Progression Model"
 
 
 # Initial data parameters
 def simulate_data(years, capacity, duration, attrition):
-    print('aaa')
+    #print('aaa')
     progressing = [capacity]
     attrition_data = []
     hold = []
@@ -42,48 +47,102 @@ def simulate_data(years, capacity, duration, attrition):
     return progressing[:-1], attrition_data, hold
 
 
-app.layout = html.Div([
-    html.Div([
-        html.Div([
-            html.H2("Simulation Settings", style={"textAlign": "center", "color": "#0064C4", "fontSize": "20px"}),
-            html.Label("Select Course(s)", style={"marginTop": "20px"}),
+app.layout = dbc.Container([
+    dbc.Row([
+        # Left panel
+        dbc.Col([
+            html.H3("Simulation Settings", className="text-center mb-4", style={"color": "#707070"}),
+            html.P("Select Course(s)", className="mb-2 fw-bold", style={"color": "#0064C4"}),
             dcc.Dropdown(
                 id="course-selector",
                 options=dropdown_options,
                 value=["stage1"],
                 multi=True,
-                style={"marginBottom": "20px"}
-            ),
-            html.Label("Year", style={"marginTop": "20px"}),
-            dcc.Slider(
-                id="year-slider",
-                min=1, max=10, step=1, value=1,
-                marks={i: str(i) for i in range(1, 11)},
-                tooltip={"always_visible": True}
-            ),
-            html.H3("Course Settings", style={"marginTop": "30px", "color": "#0064C4", "fontSize": "18px"}),
-            html.Div(id="course-settings-container", style={"marginBottom": "10px", "fontSize": "14px"}),
-            html.Button("Run Model", id="run-model", n_clicks=0,
-                        style={"marginTop": "20px", "width": "100%", "padding": "10px", "backgroundColor": "#0064C4",
-                               "color": "white", "border": "none", "borderRadius": "4px", "fontSize": "16px",
-                               "cursor": "pointer"}),
-        ], style={"width": "30%", "padding": "10px", "backgroundColor": "#f9f9f9", "borderRight": "2px solid #eee",
-                  "boxShadow": "2px 2px 5px rgba(0,0,0,0.1)"}),
-        html.Div([
-            dcc.Loading(
-                [html.H2("Simulation Results", style={"textAlign": "center", "color": "#0064C4"}),
-                 dcc.Graph(id="progressing-graph", style={"marginTop": "20px"}),
-                 dcc.Graph(id="attrition-graph", style={"marginTop": "20px"}),
-                 dcc.Graph(id="hold-graph", style={"marginTop": "20px"}),
-                 ],
-                overlay_style={"visibility": "visible", "opacity": .5, "backgroundColor": "white"},
-                type='circle'
+                className="mb-4"
             ),
 
-        ], style={"width": "70%", "padding": "20px"})
-    ], style={"display": "flex", "flexDirection": "row", "justifyContent": "space-between", "flexWrap": "nowrap",
-              "alignItems": "flex-start"})
-], style={"fontFamily": "Arial, sans-serif", "backgroundColor": "#fff", "padding": "20px"})
+            html.P("Year", className="mb-2 fw-bold", style={"color": "#0064C4"}),
+
+            dcc.Slider(
+                id="year-slider",
+                min=0, max=10, step=1, value=6,
+                marks={i: str(i) for i in range(1, 11)},
+                tooltip={"always_visible": False}
+            ),
+
+            html.P("Course Settings", className="mb-2 mt-4 fw-bold", style={"color": "#0064C4"}),
+
+            html.Div(id="course-settings-container", className="mb-4"),
+
+            dbc.Button([
+                html.I(className="bi bi-play-fill me-2"),
+                "Run Model"
+            ], id="run-model", n_clicks=0,
+                color="primary", className="w-100",
+                style={
+                    "backgroundColor": "#0064C4",
+                    "borderRadius": "6px",
+                    "border": "none",
+                    "boxShadow": "inset 0 1px 1px rgba(255,255,255,0.1)"
+                }
+            )
+        ], md=3, style={
+            "backgroundColor": "#f4f4f4",
+            "padding": "20px",
+            "minHeight": "100vh",
+            "borderRight": "1px solid #dee2e6"
+        }),
+
+        # Right panel
+        dbc.Col([
+            html.H3("Simulation Results", className="text-center mb-4", style={"color": "#707070"}),
+
+            html.Div([
+                dcc.Loading(
+                    type="circle",
+                    color="#0064C4",
+                    style={
+                        "position": "absolute",
+                        "top": "200px",
+                        "left": "50%",
+                        "transform": "translateX(-50%)",
+                        "zIndex": "1000"
+                    },
+                    children=[
+                        html.Div([
+                            dbc.Card([
+                                dbc.CardHeader("Progressing", className="fw-bold",
+                                               style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
+                                dbc.CardBody([
+                                    dcc.Graph(id="progressing-graph", style={"height": "250px"})
+                                ], style={"padding": "10px"})
+                            ], className="mb-4 shadow-sm",
+                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"}),
+
+                            dbc.Card([
+                                dbc.CardHeader("Attrition", className="fw-bold",
+                                               style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
+                                dbc.CardBody([
+                                    dcc.Graph(id="attrition-graph", style={"height": "250px"})
+                                ], style={"padding": "10px"})
+                            ], className="mb-4 shadow-sm",
+                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"}),
+
+                            dbc.Card([
+                                dbc.CardHeader("Hold", className="fw-bold",
+                                               style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
+                                dbc.CardBody([
+                                    dcc.Graph(id="hold-graph", style={"height": "250px"})
+                                ], style={"padding": "10px"})
+                            ], className="mb-0 shadow-sm",
+                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"})
+                        ])
+                    ]
+                )
+            ], style={"position": "relative", "minHeight": "600px"})
+        ], md=8, style={"padding": "20px"})
+    ])
+], fluid=True, className="bg-light")
 
 
 # Callback to update course settings dynamically
@@ -94,25 +153,59 @@ app.layout = html.Div([
 def update_course_settings(selected_courses):
     if not selected_courses:
         return []
+
     children = []
     for course in selected_courses:
         data = COURSE_DATA[course]
-        children.append(html.Div([
-            html.H4(f"Settings for {course}", style={"color": "#333", "fontSize": "16px"}),
-            html.Label("Capacity"),
-            dcc.Input(id={"type": "course-capacity", "index": course}, type="number",
-                      value=data["capacity_progressing"],
-                      style={"width": "90%", "padding": "5px", "marginBottom": "10px"}),
-            html.Label("Duration"),
-            dcc.Input(id={"type": "course-duration", "index": course}, type="number", value=data["time_progressing"],
-                      style={"width": "90%", "padding": "5px", "marginBottom": "10px"}),
-            html.Label("Attrition"),
-            dcc.Input(id={"type": "course-attrition", "index": course}, type="number",
-                      value=data["drop_out_progressing"], step=0.01,
-                      style={"width": "90%", "padding": "5px", "marginBottom": "10px"}),
-            html.Hr(style={"marginTop": "20px"})
-        ], style={"marginBottom": "10px", "padding": "8px", "border": "1px solid #ddd", "borderRadius": "4px",
-                  "backgroundColor": "#fff"}))
+
+        children.append(
+            dbc.Card([
+                dbc.CardBody([
+                    html.P(f"Settings for {course}", className="mb-3 fw-bold"),
+
+                    dbc.InputGroup([
+                        dbc.InputGroupText([
+                            html.I(className="bi bi-people-fill me-2"),
+                            "Capacity"
+                        ], className="w-75"),
+                        dbc.Input(
+                            id={"type": "course-capacity", "index": course},
+                            type="number",
+                            value=data["capacity_progressing"],
+                            className="w-25"
+                        )
+                    ], className="mb-3"),
+
+                    dbc.InputGroup([
+                        dbc.InputGroupText([
+                            html.I(className="bi bi-hourglass-split me-2"),
+                            "Duration"
+                        ], className="w-75"),
+                        dbc.Input(
+                            id={"type": "course-duration", "index": course},
+                            type="number",
+                            value=data["time_progressing"],
+                            className="w-25"
+                        )
+                    ], className="mb-3"),
+
+                    dbc.InputGroup([
+                        dbc.InputGroupText([
+                            html.I(className="bi bi-exclamation-triangle-fill me-2"),
+                            "Attrition"
+                        ], className="w-75"),
+                        dbc.Input(
+                            id={"type": "course-attrition", "index": course},
+                            type="number",
+                            step=0.01,
+                            value=data["drop_out_progressing"],
+                            className="w-25"
+                        )
+                    ])
+                ])
+            ], className="mb-4 shadow-sm")
+        )
+
     return children
 
 
@@ -133,10 +226,10 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
         selected_courses = []
     if not isinstance(selected_courses, list):
         selected_courses = [selected_courses]
-    print(selected_courses)
-    print(capacities)
-    print(durations)
-    print(attritions)
+    #print(selected_courses)
+    #print(capacities)
+    #print(durations)
+    #print(attritions)
     progressing = []
     attrition_data = []
     hold = []
@@ -144,7 +237,7 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
     attrition_fig = go.Figure()
     hold_fig = go.Figure()
     # Simulate data for the selected course
-    if n_clicks > 0 and selected_courses:
+    if n_clicks > 0 and year and selected_courses:
         ''' Send request to FastAPI backend
         the format of json should be {stagenum}_capacity_progressing,{stagenum}_time_progressing
         and {stagenum}_capacity_progressing where stagenum is the course number or name as specified in career_pathway.csv
@@ -167,6 +260,7 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
 
             df = df.T
             df = df.groupby(np.arange(len(df)) // 12).mean().reset_index()
+            df.index += 1
 
             print(df)
 
@@ -174,16 +268,19 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
                 progressing = df[f'progressing_{selected_courses[i]}_count']
                 attrition_data = df[f'left_{selected_courses[i]}_count']
                 hold = df[f'hold_{selected_courses[i]}_count']
+               # print(hold[:year])
 
                 # Create figures
-                progressing_fig.add_trace(go.Scatter(y=progressing, mode="lines", name=course))
-                progressing_fig.update_layout(title="Progressing", xaxis_title="Year", yaxis_title="Count")
+                progressing_fig.add_trace(go.Scatter(y=progressing[:year], mode="lines", name=course))
+                progressing_fig.update_layout(xaxis_title="Year", yaxis_title="Count",
+                                              margin=dict(l=20, r=20, t=20, b=20))
 
-                attrition_fig.add_trace(go.Scatter(y=attrition_data, mode="lines", name=course))
-                attrition_fig.update_layout(title="Attrition", xaxis_title="Year", yaxis_title="Rate")
+                attrition_fig.add_trace(go.Scatter(y=attrition_data[:year], mode="lines", name=course))
+                attrition_fig.update_layout(xaxis_title="Year", yaxis_title="Rate", margin=dict(l=20, r=20, t=20, b=20))
 
-                hold_fig.add_trace(go.Scatter(y=hold, mode="lines", name=course))
-                hold_fig.update_layout(title="Hold", xaxis_title="Year", yaxis_title="Count")
+                hold_fig.add_trace(go.Scatter(y=hold[:year], mode="lines", name=course))
+                hold_fig.update_layout(yaxis_range=[0, 1.1 * max(year)])
+                hold_fig.update_layout(xaxis_title="Year", yaxis_title="Count", margin=dict(l=20, r=20, t=20, b=20))
 
     return progressing_fig, attrition_fig, hold_fig
 
