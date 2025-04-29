@@ -30,7 +30,7 @@ app.title = "Course Progression Model"
 
 # Initial data parameters
 def simulate_data(years, capacity, duration, attrition):
-    print('aaa')
+    #print('aaa')
     progressing = [capacity]
     attrition_data = []
     hold = []
@@ -65,7 +65,7 @@ app.layout = dbc.Container([
 
             dcc.Slider(
                 id="year-slider",
-                min=1, max=10, step=1, value=1,
+                min=0, max=10, step=1, value=6,
                 marks={i: str(i) for i in range(1, 11)},
                 tooltip={"always_visible": False}
             ),
@@ -226,10 +226,10 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
         selected_courses = []
     if not isinstance(selected_courses, list):
         selected_courses = [selected_courses]
-    print(selected_courses)
-    print(capacities)
-    print(durations)
-    print(attritions)
+    #print(selected_courses)
+    #print(capacities)
+    #print(durations)
+    #print(attritions)
     progressing = []
     attrition_data = []
     hold = []
@@ -237,7 +237,7 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
     attrition_fig = go.Figure()
     hold_fig = go.Figure()
     # Simulate data for the selected course
-    if n_clicks > 0 and selected_courses:
+    if n_clicks > 0 and year and selected_courses:
         ''' Send request to FastAPI backend
         the format of json should be {stagenum}_capacity_progressing,{stagenum}_time_progressing
         and {stagenum}_capacity_progressing where stagenum is the course number or name as specified in career_pathway.csv
@@ -260,6 +260,7 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
 
             df = df.T
             df = df.groupby(np.arange(len(df)) // 12).mean().reset_index()
+            df.index += 1
 
             print(df)
 
@@ -267,16 +268,18 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
                 progressing = df[f'progressing_{selected_courses[i]}_count']
                 attrition_data = df[f'left_{selected_courses[i]}_count']
                 hold = df[f'hold_{selected_courses[i]}_count']
+               # print(hold[:year])
 
                 # Create figures
-                progressing_fig.add_trace(go.Scatter(y=progressing, mode="lines", name=course))
+                progressing_fig.add_trace(go.Scatter(y=progressing[:year], mode="lines", name=course))
                 progressing_fig.update_layout(xaxis_title="Year", yaxis_title="Count",
                                               margin=dict(l=20, r=20, t=20, b=20))
 
-                attrition_fig.add_trace(go.Scatter(y=attrition_data, mode="lines", name=course))
+                attrition_fig.add_trace(go.Scatter(y=attrition_data[:year], mode="lines", name=course))
                 attrition_fig.update_layout(xaxis_title="Year", yaxis_title="Rate", margin=dict(l=20, r=20, t=20, b=20))
 
-                hold_fig.add_trace(go.Scatter(y=hold, mode="lines", name=course))
+                hold_fig.add_trace(go.Scatter(y=hold[:year], mode="lines", name=course))
+                hold_fig.update_layout(yaxis_range=[0, 1.1 * max(year)])
                 hold_fig.update_layout(xaxis_title="Year", yaxis_title="Count", margin=dict(l=20, r=20, t=20, b=20))
 
     return progressing_fig, attrition_fig, hold_fig
