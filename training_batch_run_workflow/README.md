@@ -36,7 +36,7 @@ steps are the time units that are used to measure the pipeline duration.
 
 
 ### Concept of Stages and States in the Model 
-The journey of agents is modelled as a sequence of stages that each agent has to go through. There are 6 stages in the pipeline - STage0, Stage1, Stage2, Stage3, Stage4 and Stage5.
+The journey of agents is modelled as a sequence of stages that each agent has to go through. See the stages illustrated in the diagram.
 
 The model assumes that excluding initial stage during any stage each agent can be in three different states: 
 - **progressing:** progressing through a stage in the pipeline
