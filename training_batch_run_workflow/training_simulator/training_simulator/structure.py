@@ -23,7 +23,7 @@ class Stream(enum.Enum):
 # no longer used for stages other than INIT
 class Stage(enum.Enum):
     INIT = "init"
-    STAGE1 = "stage1"
+    STAGE1 = "course1"
 
 
 @dataclass

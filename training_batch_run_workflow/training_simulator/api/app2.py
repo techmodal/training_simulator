@@ -10,11 +10,12 @@ import default  # Import the default.py file containing DEFAULT_PARAMETERS
 
 # Extract course data from default.py instead of API request
 COURSE_DATA = default.DEFAULT_PARAMETERS["pipeline"]
-
+courses = list(COURSE_DATA.keys())
+courses.remove("init")
 # Define dropdown options based on the local file
 dropdown_options = [
-    {"label": f"Stage {i} ({key})", "value": key}
-    for i, key in enumerate(COURSE_DATA.keys(), start=1)
+    {"label": f"Course {i}", "value": key}
+    for i, key in enumerate(courses, start=1)
 ]
 
 API_URL = "http://127.0.0.1:8055"
@@ -56,7 +57,7 @@ app.layout = dbc.Container([
             dcc.Dropdown(
                 id="course-selector",
                 options=dropdown_options,
-                value=["stage1"],
+                value=["course1"],
                 multi=True,
                 className="mb-4"
             ),

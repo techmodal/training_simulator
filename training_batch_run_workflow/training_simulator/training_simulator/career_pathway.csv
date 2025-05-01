@@ -1,11 +1,7 @@
 fromstage,tostage,weight
-stage1,stage2,0.6
-stage1,stage3,0.4
-stage2,stage21,0.5
-stage21,stage211,1
-stage2,stage22,0.3
-stage2,stage23,0.2
-stage23,stage231,1
-stage3,stage31,0.1
-stage3,stage32,0.6
-stage3,stage33,0.3
+course1,course2,1
+course2,course3,0.4
+course2,course5,0.3
+course2,course6,0.3
+course3,course4,1
+course6,course7,1

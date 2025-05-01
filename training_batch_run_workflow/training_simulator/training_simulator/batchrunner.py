@@ -23,12 +23,12 @@ import itertools
 
 PARAM_OVERRIDES = {
     "init_new_trainees": [11],
-    "stage1_drop_out_progressing": [0.1],
-    "stage1_capacity_progressing": [2],
-    "stage1_time_progressing": [9],
-    "stage2_drop_out_progressing": [0.2],
-    "stage2_capacity_progressing": [2],
-    "stage2_time_progressing": [6],
+    "course1_drop_out_progressing": [0.1],
+    "course1_capacity_progressing": [2],
+    "course1_time_progressing": [9],
+    "course2_drop_out_progressing": [0.2],
+    "course2_capacity_progressing": [2],
+    "course2_time_progressing": [6],
 
 }
 # PARAM_OVERRIDES = {
