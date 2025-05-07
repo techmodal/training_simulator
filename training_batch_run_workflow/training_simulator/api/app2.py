@@ -31,7 +31,7 @@ app.title = "Course Progression Model"
 
 # Initial data parameters
 def simulate_data(years, capacity, duration, attrition):
-    #print('aaa')
+    # print('aaa')
     progressing = [capacity]
     attrition_data = []
     hold = []
@@ -52,7 +52,7 @@ app.layout = dbc.Container([
     dbc.Row([
         # Left panel
         dbc.Col([
-            html.H3("Simulation Settings", className="text-center mb-4", style={"color": "#707070"}),
+            html.H3("Course(s) Parameters", className="text-center mb-4", style={"color": "#707070"}),
             html.P("Select Course(s)", className="mb-2 fw-bold", style={"color": "#0064C4"}),
             dcc.Dropdown(
                 id="course-selector",
@@ -96,52 +96,134 @@ app.layout = dbc.Container([
 
         # Right panel
         dbc.Col([
-            html.H3("Simulation Results", className="text-center mb-4", style={"color": "#707070"}),
 
-            html.Div([
+            # Landing page message
+            html.Div(id="intro-message", children=[
+                dbc.Card([
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.CardBody([
+                                html.H4([
+                                    html.Span([
+                                        html.I(className="bi bi-person-lines-fill me-2", id="intro-icon"),
+                                        dbc.Tooltip(
+                                            "Click 'Run Model' to begin the simulation.",
+                                            target="intro-icon",
+                                            placement="right",
+                                            style={"fontSize": "0.85rem"}
+                                        )
+                                    ]),
+                                    "Workforce Pipeline Simulator"
+                                ], className="mb-3", style={"color": "#0064C4"}),
+
+                                html.P(
+                                    "This tool allows you to simulate workforce training pipelines by modelling how agents (trainees) move through different training stages over time."),
+                                html.P(
+                                    "It helps evaluate how course capacity, duration, and attrition rates affect the ability to deliver trained personnel."),
+
+                                html.H5([
+                                    "How to use:"
+                                ], className="mt-4 mb-2", style={"color": "#343a40"}),
+
+                                html.Ul([
+                                    html.Li([
+                                        html.I(className="bi bi-ui-checks me-2", style={"color": "#6c757d"}),
+                                        "Select one or more courses using the dropdown on the left."
+                                    ]),
+                                    html.Li([
+                                        html.I(className="bi bi-sliders2 me-2", style={"color": "#6c757d"}),
+                                        "Adjust parameters such as capacity, duration, and attrition for each selected course."
+                                    ]),
+                                    html.Li([
+                                        html.I(className="bi bi-play-circle me-2", style={"color": "#6c757d"}),
+                                        "Click the 'Run Model' button to simulate the pipeline."
+                                    ]),
+                                    html.Li([
+                                        html.I(className="bi bi-bar-chart-line me-2", style={"color": "#6c757d"}),
+                                        "Simulation results will be shown here as interactive charts."
+                                    ])
+                                ], style={"lineHeight": "1.8", "listStyleType": "none", "paddingLeft": "0"}),
+
+                                html.P(
+                                    "The model uses agent-based simulation to explore how individuals progress through a training pipeline.")
+                            ], style={"maxWidth": "100%"})
+                        ], md=6),
+
+                        dbc.Col([
+                            html.Img(
+                                src="/dashboard/assets/pipeline_diagram.png",
+                                style={
+                                    "maxWidth": "100%",
+                                    "minHeight": "280px",
+                                    "objectFit": "contain",
+                                    "padding": "10px",
+                                    "borderRadius": "10px"
+                                }
+                            )
+                        ], md=6, className="d-flex align-items-center justify-content-center")
+                    ], align="center")
+                ], className="shadow", style={
+                    "backgroundColor": "#ffffff",
+                    "borderRadius": "5px",
+                    "border": "1px solid #dee2e6",
+                    "padding": "20px",
+                    "width": "100%"
+                })
+            ]),
+
+            # Graphs section (initially hidden)
+            html.Div(id="graph-section", children=[
+                html.H3("Simulation Results", className="text-center mb-4", style={"color": "#707070"}),
+                html.Div(id="summary-metrics", className="mb-4", style={
+                    "textAlign": "center",
+                    "fontWeight": "bold",
+                    "color": "#343a40",
+                    "fontSize": "1.1rem"
+                }),
                 dcc.Loading(
-                    type="circle",
+                    id="loading-spinner",
+                    type="default",
                     color="#0064C4",
+                    fullscreen=False,
                     style={
-                        "position": "absolute",
-                        "top": "200px",
-                        "left": "50%",
-                        "transform": "translateX(-50%)",
-                        "zIndex": "1000"
+                        "marginTop": "-350px",
+                        "textAlign": "center",
+                        "minHeight": "150px"
                     },
                     children=[
                         html.Div([
                             dbc.Card([
                                 dbc.CardHeader("Progressing", className="fw-bold",
                                                style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
-                                dbc.CardBody([
-                                    dcc.Graph(id="progressing-graph", style={"height": "250px"})
-                                ], style={"padding": "10px"})
-                            ], className="mb-4 shadow-sm",
-                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"}),
+                                dbc.CardBody(
+                                    dcc.Graph(id="progressing-graph", style={"height": "250px"}),
+                                    style={"padding": "10px", "overflowX": "auto"}
+                                )
+                            ], className="mb-4 shadow-sm"),
 
                             dbc.Card([
                                 dbc.CardHeader("Attrition", className="fw-bold",
                                                style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
-                                dbc.CardBody([
-                                    dcc.Graph(id="attrition-graph", style={"height": "250px"})
-                                ], style={"padding": "10px"})
-                            ], className="mb-4 shadow-sm",
-                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"}),
+                                dbc.CardBody(
+                                    dcc.Graph(id="attrition-graph", style={"height": "250px"}),
+                                    style={"padding": "10px", "overflowX": "auto"}
+                                )
+                            ], className="mb-4 shadow-sm"),
 
                             dbc.Card([
                                 dbc.CardHeader("Hold", className="fw-bold",
                                                style={"backgroundColor": "#f4f4f4", "color": "#0064C4"}),
-                                dbc.CardBody([
-                                    dcc.Graph(id="hold-graph", style={"height": "250px"})
-                                ], style={"padding": "10px"})
-                            ], className="mb-0 shadow-sm",
-                                style={"backgroundColor": "#fff", "borderRadius": "5px 5px 0 0"})
-                        ])
+                                dbc.CardBody(
+                                    dcc.Graph(id="hold-graph", style={"height": "250px"}),
+                                    style={"padding": "10px", "overflowX": "auto"}
+                                )
+                            ], className="mb-0 shadow-sm")
+                        ]),
                     ]
                 )
-            ], style={"position": "relative", "minHeight": "600px"})
-        ], md=8, style={"padding": "20px"})
+            ], style={"visibility": "hidden", "height": "0", "overflow": "hidden"})
+
+        ], md=9, style={"padding": "20px"})
     ])
 ], fluid=True, className="bg-light")
 
@@ -168,41 +250,78 @@ def update_course_settings(selected_courses):
                         dbc.InputGroupText([
                             html.I(className="bi bi-people-fill me-2"),
                             "Capacity"
-                        ], className="w-75"),
+                        ]),
                         dbc.Input(
                             id={"type": "course-capacity", "index": course},
                             type="number",
                             value=data["capacity_progressing"],
-                            className="w-25"
-                        )
+                            className="text-end"
+                        ),
+                        dbc.InputGroupText([
+                            html.I(
+                                id={"type": "tooltip-capacity", "index": course},
+                                className="bi bi-question-circle-fill text-muted",
+                                style={"cursor": "pointer"}
+                            )
+                        ])
                     ], className="mb-3"),
+
+                    dbc.Tooltip(
+                        "Maximum number of trainees on the course.",
+                        target={"type": "tooltip-capacity", "index": course},
+                        placement="top"
+                    ),
 
                     dbc.InputGroup([
                         dbc.InputGroupText([
                             html.I(className="bi bi-hourglass-split me-2"),
                             "Duration"
-                        ], className="w-75"),
+                        ]),
                         dbc.Input(
                             id={"type": "course-duration", "index": course},
                             type="number",
                             value=data["time_progressing"],
-                            className="w-25"
-                        )
+                            className="text-end"
+                        ),
+                        dbc.InputGroupText([
+                            html.I(
+                                id={"type": "tooltip-duration", "index": course},
+                                className="bi bi-question-circle-fill text-muted",
+                                style={"cursor": "pointer"}
+                            )
+                        ])
                     ], className="mb-3"),
+                    dbc.Tooltip(
+                        "Number of months trainees need to complete this stage.",
+                        target={"type": "tooltip-duration", "index": course},
+                        placement="top"
+                    ),
 
                     dbc.InputGroup([
                         dbc.InputGroupText([
                             html.I(className="bi bi-exclamation-triangle-fill me-2"),
                             "Attrition"
-                        ], className="w-75"),
+                        ]),
                         dbc.Input(
                             id={"type": "course-attrition", "index": course},
                             type="number",
                             step=0.01,
                             value=data["drop_out_progressing"],
-                            className="w-25"
-                        )
-                    ])
+                            className="text-end"
+                        ),
+                        dbc.InputGroupText([
+                            html.I(
+                                id={"type": "tooltip-attrition", "index": course},
+                                className="bi bi-question-circle-fill text-muted",
+                                style={"cursor": "pointer"}
+                            )
+                        ])
+                    ]),
+                    dbc.Tooltip(
+                        "Percentage of trainees expected to drop out during this stage.",
+                        target={"type": "tooltip-attrition", "index": course},
+                        placement="top"
+                    ),
                 ])
             ], className="mb-4 shadow-sm")
         )
@@ -211,15 +330,20 @@ def update_course_settings(selected_courses):
 
 
 @app.callback(
-    [Output("progressing-graph", "figure"),
-     Output("attrition-graph", "figure"),
-     Output("hold-graph", "figure")],
-    [Input("run-model", "n_clicks")],
-    [State("year-slider", "value"),
-     State("course-selector", "value"),
-     State({"type": "course-capacity", "index": ALL}, "value"),
-     State({"type": "course-duration", "index": ALL}, "value"),
-     State({"type": "course-attrition", "index": ALL}, "value")]
+    [
+        Output("progressing-graph", "figure"),
+        Output("attrition-graph", "figure"),
+        Output("hold-graph", "figure"),
+        Output("summary-metrics", "children"),
+    ],
+    [
+        Input("run-model", "n_clicks"),
+        State("year-slider", "value"),
+        State("course-selector", "value"),
+        State({"type": "course-capacity", "index": ALL}, "value"),
+        State({"type": "course-duration", "index": ALL}, "value"),
+        State({"type": "course-attrition", "index": ALL}, "value"),
+    ]
 )
 def update_plots(n_clicks, year, selected_courses, capacities, durations, attritions):
     print('test')
@@ -227,10 +351,10 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
         selected_courses = []
     if not isinstance(selected_courses, list):
         selected_courses = [selected_courses]
-    #print(selected_courses)
-    #print(capacities)
-    #print(durations)
-    #print(attritions)
+    # print(selected_courses)
+    # print(capacities)
+    # print(durations)
+    # print(attritions)
     progressing = []
     attrition_data = []
     hold = []
@@ -269,21 +393,79 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
                 progressing = df[f'progressing_{selected_courses[i]}_count']
                 attrition_data = df[f'left_{selected_courses[i]}_count']
                 hold = df[f'hold_{selected_courses[i]}_count']
-               # print(hold[:year])
+                # print(hold[:year])
 
                 # Create figures
                 progressing_fig.add_trace(go.Scatter(y=progressing[:year], mode="lines", name=course))
-                progressing_fig.update_layout(xaxis_title="Year", yaxis_title="Count",
-                                              margin=dict(l=20, r=20, t=20, b=20))
-
+                progressing_fig.update_layout(
+                    autosize=True,
+                    xaxis_title="Year",
+                    yaxis_title="Count",
+                    margin=dict(l=20, r=20, t=20, b=20)
+                )
                 attrition_fig.add_trace(go.Scatter(y=attrition_data[:year], mode="lines", name=course))
-                attrition_fig.update_layout(xaxis_title="Year", yaxis_title="Rate", margin=dict(l=20, r=20, t=20, b=20))
-
+                attrition_fig.update_layout(
+                    autosize=True,
+                    xaxis_title="Year",
+                    yaxis_title="Rate",
+                    margin=dict(l=20, r=20, t=20, b=20)
+                )
                 hold_fig.add_trace(go.Scatter(y=hold[:year], mode="lines", name=course))
-                hold_fig.update_layout(yaxis_range=[0, 1.1 * max(year)])
-                hold_fig.update_layout(xaxis_title="Year", yaxis_title="Count", margin=dict(l=20, r=20, t=20, b=20))
+                hold_fig.update_layout(yaxis_range=[0, max(hold[:year]) * 1.1])
+                hold_fig.update_layout(
+                    autosize=True,
+                    yaxis_range=[0, max(hold[:year]) * 1.1],
+                    xaxis_title="Year",
+                    yaxis_title="Count",
+                    margin=dict(l=20, r=20, t=20, b=20)
+                )
 
-    return progressing_fig, attrition_fig, hold_fig
+    summary_text = ""
+    if n_clicks > 0 and year and selected_courses and response.status_code == 200:
+        # assuming only 1 course selected
+        last_year = year - 1  # because index starts from 0
+        final_progressing = int(progressing[last_year])
+        final_attrition = int(attrition_data[:year].sum())
+        final_hold = int(hold[last_year])
+        total_started = int(progressing.iloc[0])
+
+        summary_text = html.Div([
+            dbc.Row([
+                dbc.Col(dbc.Card([
+                    dbc.CardBody([
+                        html.H6("Progressing", className="card-title text-success"),
+                        html.H4(f"{final_progressing}", className="card-text")
+                    ])
+                ], color="light", inverse=False), md=4),
+
+                dbc.Col(dbc.Card([
+                    dbc.CardBody([
+                        html.H6("Hold", className="card-title text-primary"),
+                        html.H4(f"{final_hold}", className="card-text")
+                    ])
+                ], color="light", inverse=False), md=4),
+
+                dbc.Col(dbc.Card([
+                    dbc.CardBody([
+                        html.H6("Attrition", className="card-title text-warning"),
+                        html.H4(f"{final_attrition}", className="card-text")
+                    ])
+                ], color="light", inverse=False), md=4)
+            ], className="mb-4")
+        ])
+
+    return progressing_fig, attrition_fig, hold_fig, summary_text
+
+
+@app.callback(
+    [Output("intro-message", "style"),
+     Output("graph-section", "style")],
+    Input("run-model", "n_clicks")
+)
+def toggle_landing_and_graphs(n_clicks):
+    if n_clicks == 0:
+        return {}, {"visibility": "hidden", "height": "0", "overflow": "hidden"}
+    return {"display": "none"}, {"visibility": "visible", "height": "auto", "overflow": "visible"}
 
 
 if __name__ == "__main__":
