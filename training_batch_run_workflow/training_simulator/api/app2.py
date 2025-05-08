@@ -316,12 +316,37 @@ def update_course_settings(selected_courses):
                                 style={"cursor": "pointer"}
                             )
                         ])
-                    ]),
+                    ], className="mb-3"),
                     dbc.Tooltip(
-                        "Percentage of trainees expected to drop out during this stage.",
+                        "Probability of trainees expected to drop out during this stage.",
                         target={"type": "tooltip-attrition", "index": course},
                         placement="top"
                     ),
+                    dbc.InputGroup([
+                        dbc.InputGroupText([
+                            html.I(className="bi bi-book me-2"),
+                            "Resource"
+                        ]),
+                        dbc.Input(
+                            id={"type": "course-resources", "index": course},
+                            type="number",
+                            value=90,
+                            className="text-end"
+                        ),
+                        dbc.InputGroupText([
+                            html.I(
+                                id={"type": "tooltip-resources", "index": course},
+                                className="bi bi-question-circle-fill text-muted",
+                                style={"cursor": "pointer"}
+                            )
+                        ])
+                    ]),
+                    dbc.Tooltip(
+                        "Ratio of available course resources (e.g. training instructors, equipment))",
+                        target={"type": "tooltip-resources", "index": course},
+                        placement="top"
+                    ),
+
                 ])
             ], className="mb-4 shadow-sm")
         )
@@ -346,7 +371,7 @@ def update_course_settings(selected_courses):
     ]
 )
 def update_plots(n_clicks, year, selected_courses, capacities, durations, attritions):
-    print('test')
+    #print('test')
     if not selected_courses:
         selected_courses = []
     if not isinstance(selected_courses, list):
@@ -387,9 +412,18 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
             df = df.groupby(np.arange(len(df)) // 12).mean().reset_index()
             df.index += 1
 
-            print(df)
+            #print(df[['complete_training_pathway1_complete_count','complete_training_pathway2_complete_count','complete_training_pathway3_complete_count']])
 
             for i, course in enumerate(selected_courses):
+                #check if column does not exist i.e. noone has left then just initialise as 0
+                #not to throw an exception
+                if f'progressing_{selected_courses[i]}_count' not in df.columns:
+                    df[f'progressing_{selected_courses[i]}_count']=0
+                if f'hold_{selected_courses[i]}_count' not in df.columns:
+                    df[f'hold_{selected_courses[i]}_count'] = 0
+                if f'left_{selected_courses[i]}_count' not in df.columns:
+                    df[f'left_{selected_courses[i]}_count'] = 0
+
                 progressing = df[f'progressing_{selected_courses[i]}_count']
                 attrition_data = df[f'left_{selected_courses[i]}_count']
                 hold = df[f'hold_{selected_courses[i]}_count']
@@ -424,7 +458,13 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
     if n_clicks > 0 and year and selected_courses and response.status_code == 200:
         # assuming only 1 course selected
         last_year = year - 1  # because index starts from 0
-        final_progressing = int(progressing[last_year])
+        complete_path1=df['complete_training_pathway1_complete_count']
+        complete_path2 = df['complete_training_pathway2_complete_count']
+        complete_path3 = df['complete_training_pathway3_complete_count']
+
+        final_pathway1_count = int(complete_path1[last_year])
+        final_pathway2_count = int(complete_path2[last_year])
+        final_pathway3_count = int(complete_path3[last_year])
         final_attrition = int(attrition_data[:year].sum())
         final_hold = int(hold[last_year])
         total_started = int(progressing.iloc[0])
@@ -433,22 +473,22 @@ def update_plots(n_clicks, year, selected_courses, capacities, durations, attrit
             dbc.Row([
                 dbc.Col(dbc.Card([
                     dbc.CardBody([
-                        html.H6("Progressing", className="card-title text-success"),
-                        html.H4(f"{final_progressing}", className="card-text")
+                        html.H6("Trade Ready: Spec 1", className="card-title text-success"),
+                        html.H4(f"{final_pathway1_count}", className="card-text")
                     ])
                 ], color="light", inverse=False), md=4),
 
                 dbc.Col(dbc.Card([
                     dbc.CardBody([
-                        html.H6("Hold", className="card-title text-primary"),
-                        html.H4(f"{final_hold}", className="card-text")
+                        html.H6("Trade Ready: Spec 2", className="card-title text-primary"),
+                        html.H4(f"{final_pathway2_count}", className="card-text")
                     ])
                 ], color="light", inverse=False), md=4),
 
                 dbc.Col(dbc.Card([
                     dbc.CardBody([
-                        html.H6("Attrition", className="card-title text-warning"),
-                        html.H4(f"{final_attrition}", className="card-text")
+                        html.H6("Trade Ready: Spec 3", className="card-title text-warning"),
+                        html.H4(f"{final_pathway3_count}", className="card-text")
                     ])
                 ], color="light", inverse=False), md=4)
             ], className="mb-4")
